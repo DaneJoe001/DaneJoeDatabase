@@ -18,7 +18,7 @@ if(NOT TARGET DaneJoe::Logger)
       include(FetchContent)
       FetchContent_Declare(
         DaneJoeLogger
-        GIT_REPOSITORY https://example.com/DaneJoeLogger.git
+        GIT_REPOSITORY https://github.com/DaneJoe001/DaneJoeLogger.git
         GIT_TAG v0.1.0
       )
       FetchContent_MakeAvailable(DaneJoeLogger)
@@ -36,7 +36,7 @@ if(NOT TARGET DaneJoe::Commons)
       include(FetchContent)
       FetchContent_Declare(
         DaneJoeCommon
-        GIT_REPOSITORY https://example.com/DaneJoeCommon.git
+        GIT_REPOSITORY https://github.com/DaneJoe001/DaneJoeCommon.git
         GIT_TAG v0.1.0
       )
       FetchContent_MakeAvailable(DaneJoeCommon)
