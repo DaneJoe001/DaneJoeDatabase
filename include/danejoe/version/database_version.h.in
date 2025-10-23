@@ -1,5 +1,17 @@
 #pragma once
 
+/**
+ * @file database_version.h.in
+ * @brief 由 CMake configure_file 生成的版本宏头文件
+ * @note
+ *   - 构建树路径：${CMAKE_CURRENT_BINARY_DIR}/include/version/database_version.h
+ *   - 安装树路径：${CMAKE_INSTALL_INCLUDEDIR}/version/database_version.h
+ * @code{.cpp}
+ *   #include <version/database_version.h>
+ *   std::cout << DANEJOE_DATABASE_VERSION_STR; // "1.0.0"
+ * @endcode
+ */
+
 #define DANEJOE_DATABASE_VERSION_STR "@PROJECT_VERSION@"
 #define DANEJOE_DATABASE_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 #define DANEJOE_DATABASE_VERSION_MINOR @PROJECT_VERSION_MINOR@

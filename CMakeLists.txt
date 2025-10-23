@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(DaneJoeDatabase VERSION 0.1.0 LANGUAGES CXX)
+project(DaneJoeDatabase VERSION 0.1.1 LANGUAGES CXX)
 option(DANEJOE_DATABASE_BUILD_TESTS "Build tests for DaneJoeDatabase" ON)
 
 # @brief 依赖发现：优先通过 find_package 消费 Logger
@@ -19,7 +19,7 @@ if(NOT TARGET DaneJoe::Logger)
       FetchContent_Declare(
         DaneJoeLogger
         GIT_REPOSITORY https://github.com/DaneJoe001/DaneJoeLogger.git
-        GIT_TAG v0.1.0
+        GIT_TAG v0.1.1
       )
       FetchContent_MakeAvailable(DaneJoeLogger)
     endif()
@@ -37,7 +37,7 @@ if(NOT TARGET DaneJoe::Commons)
       FetchContent_Declare(
         DaneJoeCommon
         GIT_REPOSITORY https://github.com/DaneJoe001/DaneJoeCommon.git
-        GIT_TAG v0.1.0
+        GIT_TAG v0.1.1
       )
       FetchContent_MakeAvailable(DaneJoeCommon)
     endif()

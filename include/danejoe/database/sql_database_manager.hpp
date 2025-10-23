@@ -4,6 +4,8 @@
  * @file sql_database_manager.hpp
  * @brief 数据库管理器
  * @author DaneJoe001
+ * @version 0.1.1
+ * @date 2025-10-24
  */
 
 #include <memory>
@@ -13,10 +15,14 @@
 
 #include "danejoe/database/sql_database.hpp"
 
+/**
+ * @namespace DaneJoe
+ * @brief DaneJoe命名空间
+ */
 namespace DaneJoe
 {
     /**
-     * @class DatabaseManager
+     * @class SqlDatabaseManager
      * @brief 数据库管理器
      */
     class SqlDatabaseManager
