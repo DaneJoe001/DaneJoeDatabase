@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(DaneJoeDatabase VERSION 0.1.1 LANGUAGES CXX)
-option(DANEJOE_DATABASE_BUILD_TESTS "Build tests for DaneJoeDatabase" ON)
+option(DANEJOE_DATABASE_BUILD_TESTS "Build tests for DaneJoeDatabase" ${BUILD_TESTING})
 
 # @brief 依赖发现：优先通过 find_package 消费 Logger
 # @note 若同一工程已添加 Logger 子目录，则后续通过 TARGET 分支链接
@@ -61,8 +61,11 @@ target_include_directories(DaneJoeDatabase
     $<INSTALL_INTERFACE:include>
 )
 
-# @brief 以目标特性声明 C++17
+# @brief 以目标特性声明 C++20
 target_compile_features(DaneJoeDatabase PUBLIC cxx_std_20)
+
+# 版本与 SOVERSION
+set_target_properties(DaneJoeDatabase PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION 0)
 
 if(NOT TARGET DaneJoe::Logger)
   message(FATAL_ERROR "DaneJoe::Logger target not found. Provide installed package, local ../logger, or enable DANEJOE_ALLOW_FETCH.")
