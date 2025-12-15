@@ -26,7 +26,7 @@ if(NOT TARGET DaneJoe::Logger)
   endif()
 endif()
 
-if(NOT TARGET DaneJoe::Commons)
+if(NOT TARGET DaneJoe::Common)
   find_package(DaneJoeCommon CONFIG QUIET)
   if(NOT DaneJoeCommon_FOUND)
     set(_COMMON_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/../common")
@@ -53,6 +53,8 @@ add_library(DaneJoeDatabase
 )
 add_library(DaneJoe::Database ALIAS DaneJoeDatabase)
 
+set_target_properties(DaneJoeDatabase PROPERTIES EXPORT_NAME Database)
+
 # @brief 公开头文件目录
 target_include_directories(DaneJoeDatabase
   PUBLIC
@@ -60,6 +62,10 @@ target_include_directories(DaneJoeDatabase
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
+
+if(MSVC)
+  target_compile_options(DaneJoeDatabase PRIVATE /utf-8)
+endif()
 
 # @brief 以目标特性声明 C++20
 target_compile_features(DaneJoeDatabase PUBLIC cxx_std_20)
@@ -72,14 +78,14 @@ if(NOT TARGET DaneJoe::Logger)
 endif()
 target_link_libraries(DaneJoeDatabase PUBLIC DaneJoe::Logger)
 
-if(NOT TARGET DaneJoe::Commons)
-  message(FATAL_ERROR "DaneJoe::Commons target not found. Provide installed package, local ../common, or enable DANEJOE_ALLOW_FETCH.")
+if(NOT TARGET DaneJoe::Common)
+  message(FATAL_ERROR "DaneJoe::Common target not found. Provide installed package, local ../common, or enable DANEJOE_ALLOW_FETCH.")
 endif()
-target_link_libraries(DaneJoeDatabase PUBLIC DaneJoe::Commons)
+target_link_libraries(DaneJoeDatabase PUBLIC DaneJoe::Common)
 
 # Ensure logger sees Commons headers when building in-tree
 if(TARGET DaneJoeLogger)
-  target_link_libraries(DaneJoeLogger PUBLIC DaneJoe::Commons)
+  target_link_libraries(DaneJoeLogger PUBLIC DaneJoe::Common)
 endif()
 
 # @brief 链接 SQLite3
@@ -133,8 +139,6 @@ install(FILES
 )
 
 if(DANEJOE_DATABASE_BUILD_TESTS)
-  include(CTest)
-  enable_testing()
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt")
     add_subdirectory(tests)
   endif()
