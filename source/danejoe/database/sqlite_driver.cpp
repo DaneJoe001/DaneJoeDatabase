@@ -1,8 +1,6 @@
 #include <filesystem>
 #include <string>
-#include <cstring>
 #include <cstdint>
-#include <variant>
 
 #include "danejoe/database/sqlite_driver.hpp"
 #include "danejoe/logger/logger_manager.hpp"

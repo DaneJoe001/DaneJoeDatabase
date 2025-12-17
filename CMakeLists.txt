@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.20)
 project(DaneJoeDatabase VERSION 0.1.1 LANGUAGES CXX)
 option(DANEJOE_DATABASE_BUILD_TESTS "Build tests for DaneJoeDatabase" ${BUILD_TESTING})
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+if(CMAKE_EXPORT_COMPILE_COMMANDS AND CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
+  if(NOT TARGET update_compile_commands_${PROJECT_NAME})
+    add_custom_target(update_compile_commands_${PROJECT_NAME} ALL
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              "${CMAKE_BINARY_DIR}/compile_commands.json"
+              "${CMAKE_CURRENT_LIST_DIR}/compile_commands.json")
+  endif()
+endif()
+
 # @brief 依赖发现：优先通过 find_package 消费 Logger
 # @note 若同一工程已添加 Logger 子目录，则后续通过 TARGET 分支链接
 find_package(SQLite3 REQUIRED)
@@ -44,12 +55,37 @@ if(NOT TARGET DaneJoe::Common)
   endif()
 endif()
 
+if(NOT TARGET DaneJoe::Condition)
+  find_package(DaneJoeCondition CONFIG QUIET)
+  if(NOT DaneJoeCondition_FOUND)
+    set(_CONDITION_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/../condition")
+    if(EXISTS "${_CONDITION_SRC_DIR}/CMakeLists.txt")
+      add_subdirectory("${_CONDITION_SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/_deps/condition-build")
+    elseif(DANEJOE_ALLOW_FETCH)
+      include(FetchContent)
+      FetchContent_Declare(
+        DaneJoeCondition
+        GIT_REPOSITORY https://github.com/DaneJoe001/DaneJoeCondition.git
+        GIT_TAG v0.1.0
+      )
+      FetchContent_MakeAvailable(DaneJoeCondition)
+    endif()
+  endif()
+endif()
+
 # @brief 定义数据库抽象库目标
 # @note 对外通过命名空间别名 `DaneJoe::Database` 暴露
 add_library(DaneJoeDatabase
+  "source/danejoe/database/i_sql_stringify.cpp"
+  "source/danejoe/database/sql_builder.cpp"
   "source/danejoe/database/sql_database_manager.cpp"
   "source/danejoe/database/sql_database.cpp"
+  "source/danejoe/database/sql_operation.cpp"
+  "source/danejoe/database/sql_query.cpp"
+  "source/danejoe/database/sql_schema.cpp"
+  "source/danejoe/database/sql_table_query.cpp"
   "source/danejoe/database/sqlite_driver.cpp"
+  "source/danejoe/database/sqlite_stringify.cpp"
 )
 add_library(DaneJoe::Database ALIAS DaneJoeDatabase)
 
@@ -82,6 +118,11 @@ if(NOT TARGET DaneJoe::Common)
   message(FATAL_ERROR "DaneJoe::Common target not found. Provide installed package, local ../common, or enable DANEJOE_ALLOW_FETCH.")
 endif()
 target_link_libraries(DaneJoeDatabase PUBLIC DaneJoe::Common)
+
+if(NOT TARGET DaneJoe::Condition)
+  message(FATAL_ERROR "DaneJoe::Condition target not found. Provide installed package, local ../condition, or enable DANEJOE_ALLOW_FETCH.")
+endif()
+target_link_libraries(DaneJoeDatabase PUBLIC DaneJoe::Condition)
 
 # Ensure logger sees Commons headers when building in-tree
 if(TARGET DaneJoeLogger)
@@ -139,6 +180,8 @@ install(FILES
 )
 
 if(DANEJOE_DATABASE_BUILD_TESTS)
+  include(CTest)
+  enable_testing()
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt")
     add_subdirectory(tests)
   endif()

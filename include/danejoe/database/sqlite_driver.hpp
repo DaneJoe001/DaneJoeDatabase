@@ -1,17 +1,18 @@
-#pragma once
-
 /**
  * @file sqlite_driver.hpp
+ * @author DaneJoe (danejoe001.github)
  * @brief SQLite 驱动
- * @author DaneJoe001 
- * @version 0.1.1
- * @date 2025-10-24
+ * @version 0.2.0
+ * @date 2025-12-17
  */
+#pragma once
 
 #include <memory>
 #include <unordered_map>
 
-#include "danejoe/database/sql_database.hpp"
+#include "danejoe/database/i_sql_driver.hpp"
+
+ // #include "danejoe/database/sql_database.hpp"
 
 extern "C"
 {
@@ -72,7 +73,7 @@ namespace DaneJoe
          * @param cell 数据单元
          * @return 是否成功
          */
-        bool bind(const std::string& sql,int index, const SqlCell& cell)override;
+        bool bind(const std::string& sql, int index, const SqlCell& cell)override;
         /**
          * @brief 重置SQL语句
          * @param sql SQL语句
