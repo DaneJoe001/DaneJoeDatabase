@@ -5,6 +5,8 @@ include(GoogleTest)
 
 add_executable(danejoe_database_unit_tests
   "${CMAKE_CURRENT_LIST_DIR}/source/test_smoke.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/source/test_sqlite_stringify.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/source/test_sql_builder.cpp"
 )
 
 target_link_libraries(danejoe_database_unit_tests

@@ -2,7 +2,7 @@
 #include "danejoe/condition/range_condition.hpp"
 #include "danejoe/database/sqlite_stringify.hpp"
 
-std::optional<std::string> DaneJoe::SqliteStringify::format_data_type(DaneJoe::DataType type) const
+std::optional<std::string> DaneJoe::SqliteStringify::try_format_data_type(DaneJoe::DataType type) const
 {
     switch (type)
     {
@@ -31,15 +31,15 @@ std::optional<std::string> DaneJoe::SqliteStringify::format_data_type(DaneJoe::D
     }
 }
 
-std::optional<std::string> DaneJoe::SqliteStringify::format_condition(const SqlConditionItem& item)const
+std::optional<std::string> DaneJoe::SqliteStringify::try_format_condition(const SqlConditionItem& item)const
 {
     if (is_integer_type(item.column_info.data_type))
     {
-        return format_range_condition(item);
+        return try_format_range_condition(item);
     }
     else if (is_string_type(item.column_info.data_type))
     {
-        return format_text_condition(item);
+        return try_format_text_condition(item);
     }
     else
     {
@@ -47,7 +47,7 @@ std::optional<std::string> DaneJoe::SqliteStringify::format_condition(const SqlC
     }
 }
 
-std::optional<std::string> DaneJoe::SqliteStringify::format_range_condition(const SqlConditionItem& item)const
+std::optional<std::string> DaneJoe::SqliteStringify::try_format_range_condition(const SqlConditionItem& item)const
 {
     if (!is_integer_type(item.column_info.data_type))
     {
@@ -62,7 +62,7 @@ std::optional<std::string> DaneJoe::SqliteStringify::format_range_condition(cons
     std::string result;
     for (auto& interval : intervals)
     {
-        auto interval_string_opt = format_integer_interval(interval, item.column_info.column_name);
+        auto interval_string_opt = try_format_integer_interval(interval, item.column_info.column_name);
         if (!interval_string_opt.has_value())
         {
             continue;
@@ -78,7 +78,7 @@ std::optional<std::string> DaneJoe::SqliteStringify::format_range_condition(cons
     return result;
 }
 
-std::optional<std::string> DaneJoe::SqliteStringify::format_integer_interval(const SingleInterval<int64_t>& interval, const std::string& column_name)const
+std::optional<std::string> DaneJoe::SqliteStringify::try_format_integer_interval(const SingleInterval<int64_t>& interval, const std::string& column_name)const
 {
     auto left_endpoint = interval.get_left_endpoint();
     auto right_endpoint = interval.get_right_endpoint();
@@ -130,7 +130,7 @@ std::optional<std::string> DaneJoe::SqliteStringify::format_integer_interval(con
         m_sign_config.right_parenthesis;
 }
 
-std::optional<std::string> DaneJoe::SqliteStringify::format_text_condition(const SqlConditionItem& item)const
+std::optional<std::string> DaneJoe::SqliteStringify::try_format_text_condition(const SqlConditionItem& item)const
 {
     if (!is_string_type(item.column_info.data_type))
     {

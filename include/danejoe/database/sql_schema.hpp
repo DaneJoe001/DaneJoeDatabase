@@ -15,10 +15,10 @@
 #include "danejoe/common/core/data_type.hpp"
 #include "danejoe/database/sql_cell.hpp"
 
-/**
- * @namespace DaneJoe
- * @brief DaneJoe命名空间
- */
+ /**
+  * @namespace DaneJoe
+  * @brief DaneJoe命名空间
+  */
 namespace DaneJoe
 {
     /**
@@ -42,7 +42,8 @@ namespace DaneJoe
         std::optional<DaneJoe::CellData> default_value;
         /**
          * @brief 是否有效
-         * @return 是否有效
+         * @return true 列信息有效
+         * @return false 列信息无效
          */
         bool is_valid()const;
         /**
@@ -53,7 +54,8 @@ namespace DaneJoe
         /**
          * @brief 是否相等
          * @param other 其他列信息
-         * @return 是否相等
+         * @return true 相等
+         * @return false 不相等
          */
         bool operator==(const SqlColumnItem& other)const;
     };
@@ -70,19 +72,22 @@ namespace DaneJoe
         bool is_unique = false;
         /**
          * @brief 是否有效
-         * @return 是否有效
+         * @return true 表信息有效
+         * @return false 表信息无效
          */
         bool is_valid()const;
         /**
          * @brief 是否包含列
          * @param column_name 列名称
-         * @return 是否包含列
+         * @return true 包含该列
+         * @return false 不包含该列
          */
         bool has_column(const std::string& column_name)const;
         /**
          * @brief 是否包含列
          * @param column_name 列信息
-         * @return 是否包含列
+         * @return true 包含该列
+         * @return false 不包含该列
          */
         bool has_column(const SqlColumnItem& column_name)const;
         /**

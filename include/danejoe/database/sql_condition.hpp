@@ -13,10 +13,10 @@
 #include "danejoe/condition/i_condition.hpp"
 #include "danejoe/database/sql_schema.hpp"
 
-/**
- * @namespace DaneJoe
- * @brief DaneJoe命名空间
- */
+ /**
+  * @namespace DaneJoe
+  * @brief DaneJoe命名空间
+  */
 namespace DaneJoe
 {
 

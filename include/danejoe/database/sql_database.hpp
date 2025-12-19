@@ -37,7 +37,8 @@ namespace DaneJoe
         void set_config(const SqlConfig& config);
         /**
          * @brief 连接数据库
-         * @return 是否成功
+         * @return true 连接成功
+         * @return false 连接失败
          */
         bool connect();
         /**

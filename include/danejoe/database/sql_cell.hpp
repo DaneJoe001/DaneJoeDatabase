@@ -14,10 +14,10 @@
 
 #include "danejoe/common/core/data_type.hpp"
 
-/**
- * @namespace DaneJoe
- * @brief DaneJoe命名空间
- */
+ /**
+  * @namespace DaneJoe
+  * @brief DaneJoe命名空间
+  */
 namespace DaneJoe
 {
     /**

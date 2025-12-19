@@ -1,6 +1,6 @@
 # DaneJoe Database
 
-数据库抽象层（目前内置 SQLite3 驱动），依赖 `DaneJoe::Logger` 与 `DaneJoe::Common`。
+数据库抽象层（目前内置 SQLite3 驱动），依赖 `DaneJoe::Common`。
 
 ## 构建
 ```bash

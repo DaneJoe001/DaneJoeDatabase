@@ -12,10 +12,10 @@
 #include "danejoe/database/i_sql_driver.hpp"
 #include "danejoe/database/sql_database.hpp"
 
-/**
- * @namespace DaneJoe
- * @brief DaneJoe命名空间
- */
+ /**
+  * @namespace DaneJoe
+  * @brief DaneJoe命名空间
+  */
 namespace DaneJoe
 {
     /**
@@ -78,7 +78,8 @@ namespace DaneJoe
         std::vector<std::vector<SqlCell>> execute_query();
         /**
          * @brief 执行命令
-         * @return 是否成功
+         * @return true 执行成功
+         * @return false 执行失败
          */
         bool execute_command();
     private:

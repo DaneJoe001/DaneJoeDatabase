@@ -9,10 +9,10 @@
 
 #include <string>
 
-/**
- * @namespace DaneJoe
- * @brief DaneJoe命名空间
- */
+ /**
+  * @namespace DaneJoe
+  * @brief DaneJoe命名空间
+  */
 namespace DaneJoe
 {
     /**

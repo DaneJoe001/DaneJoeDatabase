@@ -57,13 +57,15 @@ namespace DaneJoe
         /**
          * @brief 连接数据库
          * @param config 数据库配置
-         * @return 是否成功
+         * @return true 连接成功
+         * @return false 连接失败
          */
         bool connect(const SqlConfig& config)override;
         /**
          * @brief 准备SQL语句
          * @param sql SQL语句
-         * @return 是否成功
+         * @return true 准备成功
+         * @return false 准备失败
          */
         bool prepare(const std::string& sql)override;
         /**
@@ -71,7 +73,8 @@ namespace DaneJoe
          * @param sql SQL语句
          * @param index 参数索引
          * @param cell 数据单元
-         * @return 是否成功
+         * @return true 绑定成功
+         * @return false 绑定失败
          */
         bool bind(const std::string& sql, int index, const SqlCell& cell)override;
         /**
@@ -93,7 +96,8 @@ namespace DaneJoe
         /**
          * @brief 执行命令
          * @param sql SQL语句
-         * @return 是否成功
+         * @return true 执行成功
+         * @return false 执行失败
          */
         bool execute_command(const std::string& sql)override;
         /**

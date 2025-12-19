@@ -15,10 +15,10 @@
 #include "danejoe/database/sql_condition.hpp"
 #include "danejoe/database/i_sql_stringify.hpp"
 
-/**
- * @namespace DaneJoe
- * @brief DaneJoe命名空间
- */
+ /**
+  * @namespace DaneJoe
+  * @brief DaneJoe命名空间
+  */
 namespace DaneJoe
 {
     /**
@@ -37,7 +37,7 @@ namespace DaneJoe
          * @brief 设置字符串化接口
          * @param sql_data_type 字符串化接口
          */
-        void set_stringer(std::shared_ptr<ISqlStringify> sql_data_type);
+        void set_stringify(std::shared_ptr<ISqlStringify> sql_data_type);
         /**
          * @brief 构建创建表字符串
          * @return 字符串

@@ -1,4 +1,4 @@
-#include "danejoe/logger/logger_manager.hpp"
+#include "danejoe/common/diagnostic/diagnostic_system.hpp"
 #include "danejoe/database/sql_builder.hpp"
 #include "danejoe/database/sql_sign_config.hpp"
 
@@ -7,7 +7,7 @@ DaneJoe::SqlBuilder::SqlBuilder(const std::shared_ptr<const SqlTableItem> table_
     m_sql_stringify(sql_stringify)
 {}
 
-void DaneJoe::SqlBuilder::set_stringer(std::shared_ptr<ISqlStringify> sql_stringify)
+void DaneJoe::SqlBuilder::set_stringify(std::shared_ptr<ISqlStringify> sql_stringify)
 {
     m_sql_stringify = sql_stringify;
 }
@@ -16,7 +16,7 @@ std::optional<std::string> DaneJoe::SqlBuilder::build_create_table_string()const
 {
     if (!m_table_info->is_valid() || !m_sql_stringify)
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build create table string: invalid table info or sql data type not set.");
+        ADD_DIAG_ERROR("database", "Create table failed: invalid table info or stringify not set");
         return std::nullopt;
     }
     SqlSignConfig sign_config = m_sql_stringify->get_sign_config();
@@ -24,10 +24,10 @@ std::optional<std::string> DaneJoe::SqlBuilder::build_create_table_string()const
     std::string single_field_string;
     for (const auto& column : m_table_info->column_items)
     {
-        auto type_string_opt = m_sql_stringify->format_data_type(column.data_type);
+        auto type_string_opt = m_sql_stringify->try_format_data_type(column.data_type);
         if (!type_string_opt.has_value())
         {
-            DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build create table string: unknown data type for column {}.", column.column_name);
+            ADD_DIAG_ERROR("database", "Create table failed: unknown data type for column {}", column.column_name);
             return std::nullopt;
         }
         if (fileds_string != "")
@@ -61,41 +61,33 @@ std::optional<std::string> DaneJoe::SqlBuilder::build_create_table_string()const
     create_table_string += std::format(" {} ({});", m_table_info->table_name, fileds_string);
     return create_table_string;
 }
+
 std::optional<std::string>  DaneJoe::SqlBuilder::build_condition_string(const std::vector<SqlConditionItem>& condition_items)const
 {
     if (!m_table_info->is_valid() || !m_sql_stringify)
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build condition string: invalid table info.");
+        ADD_DIAG_ERROR("database", "Build condition failed: invalid table info or stringify not set");
         return std::nullopt;
     }
-    // 获取符号配置
     SqlSignConfig sign_config = m_sql_stringify->get_sign_config();
-    // 是否已设置排序
     bool is_set_order = false;
-    // 条件字符串
     std::string condition_string;
-    // 遍历条件项
     for (const auto& condition_item : condition_items)
     {
-        // 检查是否设置该项条件
         if (!condition_item.is_set)
         {
             continue;
         }
-        // 检查是否含有该列
-        /// @todo 考虑跨表查询
         if (!m_table_info->has_column(condition_item.column_info))
         {
-            DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build condition string: column {} does not exist in table {}.", condition_item.column_info.column_name, m_table_info->table_name);
+            ADD_DIAG_WARN("database", "Build condition failed: column {} does not exist in table {}", condition_item.column_info.column_name, m_table_info->table_name);
             continue;
         }
-        // 构建条件字符串
-        auto single_condition_string_opt = m_sql_stringify->format_condition(condition_item);
+        auto single_condition_string_opt = m_sql_stringify->try_format_condition(condition_item);
         if (!single_condition_string_opt.has_value())
         {
             continue;
         }
-        // 在条件字符串不为空时添加AND运算
         if (!condition_string.empty())
         {
             condition_string += sign_config.space_sign;
@@ -105,7 +97,6 @@ std::optional<std::string>  DaneJoe::SqlBuilder::build_condition_string(const st
         condition_string += single_condition_string_opt.value();
         if (condition_item.is_desc_order.has_value())
         {
-            /// @brief 不允许反复设置排序
             if (is_set_order)
             {
                 return std::nullopt;
@@ -130,26 +121,26 @@ std::optional<std::string>  DaneJoe::SqlBuilder::build_condition_string(const st
     }
     return condition_string;
 }
+
 std::optional<std::string>  DaneJoe::SqlBuilder::build_insert_string(const std::vector<SqlColumnItem>& dest_column_items)const
 {
     if (!m_table_info->is_valid())
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build insert string: invalid table info.");
+        ADD_DIAG_ERROR("database", "Insert failed: invalid table info");
         return std::nullopt;
     }
     auto dest_column_items_opt = build_dest_columns_string(dest_column_items);
     if (!dest_column_items_opt.has_value())
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build insert string: invalid destination columns.");
+        ADD_DIAG_ERROR("database", "Insert failed: invalid destination columns");
         return std::nullopt;
     }
     std::string place_holders_string;
-    /// @todo 在遍历时需检查对应列是否存在has_column
     for (const auto& column_item : dest_column_items)
     {
         if (!m_table_info->has_column(column_item))
         {
-            DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build insert string: column {} does not exist in table {}.", column_item.column_name, m_table_info->table_name);
+            ADD_DIAG_WARN("database", "Insert failed: column {} does not exist in table {}", column_item.column_name, m_table_info->table_name);
             continue;
         }
         if (!place_holders_string.empty())
@@ -161,16 +152,16 @@ std::optional<std::string>  DaneJoe::SqlBuilder::build_insert_string(const std::
     }
     return std::format("INSERT INTO {} ({}) VALUES ({});", m_table_info->table_name, dest_column_items_opt.value(), place_holders_string);
 }
+
 std::optional<std::string>  DaneJoe::SqlBuilder::build_select_string(
     const std::vector<SqlColumnItem>& dest_column_items,
     const std::vector<SqlConditionItem>& condition_items)const
 {
     if (!m_table_info->is_valid())
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build select string: invalid table info.");
+        ADD_DIAG_ERROR("database", "Select failed: invalid table info");
         return std::nullopt;
     }
-    /// @todo 在遍历时需检查对应列是否存在has_column
     auto dest_column_items_opt = build_dest_columns_string(dest_column_items);
     std::string dest_column_items_string = dest_column_items_opt.has_value() ? dest_column_items_opt.value() : "*";
     auto condition_string_opt = build_condition_string(condition_items);
@@ -183,13 +174,14 @@ std::optional<std::string>  DaneJoe::SqlBuilder::build_select_string(
         return std::format("SELECT {} FROM {}", dest_column_items_string, m_table_info->table_name);
     }
 }
+
 std::optional<std::string>  DaneJoe::SqlBuilder::build_update_string(
     const std::vector<SqlColumnItem>& dest_column_items,
     const std::vector<SqlConditionItem>& condition_items, bool enable_all)const
 {
     if (!m_table_info->is_valid())
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build update string: invalid table info.");
+        ADD_DIAG_ERROR("database", "Update failed: invalid table info");
         return std::nullopt;
     }
     std::string dest_columns_string;
@@ -197,7 +189,7 @@ std::optional<std::string>  DaneJoe::SqlBuilder::build_update_string(
     {
         if (!m_table_info->has_column(column_item))
         {
-            DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build update string: column {} does not exist in table {}.", column_item.column_name, m_table_info->table_name);
+            ADD_DIAG_WARN("database", "Update failed: column {} does not exist in table {}", column_item.column_name, m_table_info->table_name);
             continue;
         }
         if (!dest_columns_string.empty())
@@ -209,7 +201,7 @@ std::optional<std::string>  DaneJoe::SqlBuilder::build_update_string(
     }
     if (dest_columns_string.empty())
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build update string: no valid destination columns.");
+        ADD_DIAG_ERROR("database", "Update failed: no valid destination columns");
         return std::nullopt;
     }
     auto condition_string_opt = build_condition_string(condition_items);
@@ -232,7 +224,7 @@ std::optional<std::string> DaneJoe::SqlBuilder::build_delete_string(const std::v
 {
     if (!m_table_info->is_valid())
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build delete string: invalid table info.");
+        ADD_DIAG_ERROR("database", "Delete failed: invalid table info");
         return std::nullopt;
     }
     auto condition_string_opt = build_condition_string(condition_items);
@@ -254,13 +246,12 @@ std::optional<std::string> DaneJoe::SqlBuilder::build_dest_columns_string(const 
 {
     if (!m_table_info->is_valid())
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build dest columns string: invalid table info.");
+        ADD_DIAG_ERROR("database", "Build dest columns failed: invalid table info");
         return std::nullopt;
     }
-    // 此处不能给*,*逻辑应该交由对应的build
     if (column_items.empty())
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build dest columns string: no valid destination columns.");
+        ADD_DIAG_ERROR("database", "Build dest columns failed: no valid destination columns");
         return std::nullopt;
     }
     std::string dest_columns_string;
@@ -268,7 +259,7 @@ std::optional<std::string> DaneJoe::SqlBuilder::build_dest_columns_string(const 
     {
         if (!m_table_info->has_column(column))
         {
-            DANEJOE_LOG_ERROR("default", "DaneJoe::SqlBuilder", "Failed to build dest columns string: column {} does not exist in table {}.", column.column_name, m_table_info->table_name);
+            ADD_DIAG_WARN("database", "Build dest columns failed: column {} does not exist in table {}", column.column_name, m_table_info->table_name);
             continue;
         }
         if (!dest_columns_string.empty())

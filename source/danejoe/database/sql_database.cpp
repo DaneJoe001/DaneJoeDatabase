@@ -1,5 +1,5 @@
+#include "danejoe/common/diagnostic/diagnostic_system.hpp"
 #include "danejoe/database/sql_database.hpp"
-#include "danejoe/logger/logger_manager.hpp"
 
 DaneJoe::SqlDatabase::SqlDatabase(std::shared_ptr<ISqlDriver> driver)
 {
@@ -13,7 +13,7 @@ bool DaneJoe::SqlDatabase::connect()
 {
     if (!m_driver)
     {
-        DANEJOE_LOG_ERROR("default", "DaneJoe::SqlDatabase", "connect sql failed: driver expired");
+        ADD_DIAG_ERROR("database", "Failed to connect database: driver is null");
         return false;
     }
     return m_driver->connect(m_config);

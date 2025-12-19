@@ -1,15 +1,16 @@
 #include <filesystem>
 #include <string>
 #include <cstdint>
+#include <exception>
 
 #include "danejoe/database/sqlite_driver.hpp"
-#include "danejoe/logger/logger_manager.hpp"
+#include "danejoe/common/diagnostic/diagnostic_system.hpp"
 
-namespace fs=std::filesystem;
+namespace fs = std::filesystem;
 
 DaneJoe::SqliteDriver::SqliteDriver() {}
 
-DaneJoe::SqliteDriver::~SqliteDriver(){}
+DaneJoe::SqliteDriver::~SqliteDriver() {}
 
 void DaneJoe::SqliteStmtDeleter::operator()(sqlite3_stmt* stmt)
 {
@@ -21,19 +22,27 @@ bool DaneJoe::SqliteDriver::connect(const SqlConfig& config)
 {
     if (m_db != nullptr)
     {
-        DANEJOE_LOG_WARN("default", "SqliteDriver", "database already connected");
+        ADD_DIAG_INFO("database", "Connect skipped: database already connected");
         return true;
     }
-    DANEJOE_LOG_TRACE("default", "SqliteDriver", "database path: {}",config.path);
+    ADD_DIAG_TRACE("database", "Connecting to database: {}", config.path);
     fs::path path = config.path;
     if (!fs::exists(path.parent_path()))
     {
-        fs::create_directories(path.parent_path());
+        try
+        {
+            fs::create_directories(path.parent_path());
+        }
+        catch (const std::exception& e)
+        {
+            ADD_DIAG_ERROR("database", "Connect failed: unable to create database directory: {}", e.what());
+            return false;
+        }  
     }
     int rc = sqlite3_open(config.path.c_str(), &m_db);
     if (rc != SQLITE_OK)
     {
-        DANEJOE_LOG_ERROR("default", "SqliteDriver", "database connect failed: {}",sqlite3_errmsg(m_db));
+        ADD_DIAG_ERROR("database", "Connect failed: {}", sqlite3_errmsg(m_db));
         return false;
     }
     return true;
@@ -43,7 +52,7 @@ bool DaneJoe::SqliteDriver::prepare(const std::string& sql)
 {
     if (m_db == nullptr)
     {
-        DANEJOE_LOG_ERROR("default", "SqliteDriver", "database not connected");
+        ADD_DIAG_ERROR("database", "Prepare failed: database not connected");
         return false;
     }
     auto stmt_it = m_stmts.find(sql);
@@ -55,22 +64,22 @@ bool DaneJoe::SqliteDriver::prepare(const std::string& sql)
     int rc = sqlite3_prepare_v2(m_db, sql.c_str(), -1, &select_stmt, nullptr);
     if (rc != SQLITE_OK)
     {
-        DANEJOE_LOG_ERROR("default", "SqliteDriver", "database prepare failed: {}", std::string(sqlite3_errmsg(m_db)));
+        ADD_DIAG_ERROR("database", "Prepare failed: {}", std::string(sqlite3_errmsg(m_db)));
         return false;
     }
     m_stmts[sql] = SqliteStmtPtr(select_stmt);
     return true;
 }
 
-bool DaneJoe::SqliteDriver::bind(const std::string& sql,int index, const SqlCell& cell)
+bool DaneJoe::SqliteDriver::bind(const std::string& sql, int index, const SqlCell& cell)
 {
     auto stmt_it = m_stmts.find(sql);
     if (stmt_it == m_stmts.end())
     {
-        DANEJOE_LOG_ERROR("default", "SqliteDriver", "database not prepared");
+        ADD_DIAG_ERROR("database", "Bind failed: statement not prepared");
         return false;
     }
-    int rc=SQLITE_OK;
+    int rc = SQLITE_OK;
     switch (cell.type)
     {
     case DataType::Int8:
@@ -124,12 +133,12 @@ bool DaneJoe::SqliteDriver::bind(const std::string& sql,int index, const SqlCell
     case DataType::Dictionary:
     case DataType::Unknown:
     default:
-        DANEJOE_LOG_ERROR("default", "SqliteDriver", "Unsupported data type");
+        ADD_DIAG_ERROR("database", "Bind failed: unsupported data type");
         return false;
     }
     if (rc != SQLITE_OK)
     {
-        DANEJOE_LOG_ERROR("default", "SqliteDriver", "database bind failed: {}",std::string(sqlite3_errmsg(m_db)));
+        ADD_DIAG_ERROR("database", "Bind failed: {}", std::string(sqlite3_errmsg(m_db)));
         return false;
     }
     return true;
@@ -140,7 +149,7 @@ void DaneJoe::SqliteDriver::reset(const std::string& sql)
     auto stmt_it = m_stmts.find(sql);
     if (stmt_it == m_stmts.end())
     {
-        DANEJOE_LOG_WARN("default", "SqliteDriver", "database not prepared");
+        ADD_DIAG_WARN("database", "Reset failed: statement not prepared");
         return;
     }
     sqlite3_reset(stmt_it->second.get());
@@ -151,7 +160,7 @@ void DaneJoe::SqliteDriver::clear_bindings(const std::string& sql)
     auto stmt_it = m_stmts.find(sql);
     if (stmt_it == m_stmts.end())
     {
-        DANEJOE_LOG_WARN("default", "SqliteDriver", "database not prepared");
+        ADD_DIAG_WARN("database", "Clear bindings failed: statement not prepared");
         return;
     }
     sqlite3_clear_bindings(stmt_it->second.get());
@@ -162,7 +171,7 @@ std::vector<std::vector<DaneJoe::SqlCell>> DaneJoe::SqliteDriver::execute_query(
     auto stmt_it = m_stmts.find(sql);
     if (stmt_it == m_stmts.end())
     {
-        DANEJOE_LOG_ERROR("default", "SqliteDriver", "database not prepared");
+        ADD_DIAG_ERROR("database", "Execute query failed: statement not prepared");
         return {};
     }
     std::vector<std::vector<SqlCell>> result;
@@ -172,7 +181,7 @@ std::vector<std::vector<DaneJoe::SqlCell>> DaneJoe::SqliteDriver::execute_query(
     {
         std::vector<SqlCell> row(col_count);
         rc = sqlite3_step(stmt_it->second.get());
-        if(rc!=SQLITE_ROW)
+        if (rc != SQLITE_ROW)
         {
             break;
         }
@@ -182,34 +191,34 @@ std::vector<std::vector<DaneJoe::SqlCell>> DaneJoe::SqliteDriver::execute_query(
             int col_type = sqlite3_column_type(stmt_it->second.get(), i);
             switch (col_type)
             {
-                case SQLITE_INTEGER:
-                    row[i].type = DataType::Int64;
-                    row[i].data = static_cast<int64_t>(sqlite3_column_int64(stmt_it->second.get(), i));
-                    break;
-                case SQLITE_FLOAT:
-                    row[i].type = DataType::Double;
-                    row[i].data = sqlite3_column_double(stmt_it->second.get(), i);
-                    break;
-                case SQLITE_TEXT:
-                    row[i].type = DataType::String;
-                    row[i].data = std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt_it->second.get(), i)));
-                    break;
-                case SQLITE_BLOB:
-                    {
-                        row[i].type = DataType::ByteArray;
-                        const void* blob = sqlite3_column_blob(stmt_it->second.get(), i);
-                        int byte_size = sqlite3_column_bytes(stmt_it->second.get(), i);
-                        row[i].data = std::vector<uint8_t>(reinterpret_cast<const uint8_t*>(blob), reinterpret_cast<const   uint8_t*>(blob) + byte_size);
-                    }
-                    break;
-                case SQLITE_NULL:
-                    row[i].type = DataType::Null;
-                    row[i].data = nullptr;
-                    break;
-                default:
-                    row[i].type = DataType::Unknown;
-                    row[i].data = nullptr;
-                    break;
+            case SQLITE_INTEGER:
+                row[i].type = DataType::Int64;
+                row[i].data = static_cast<int64_t>(sqlite3_column_int64(stmt_it->second.get(), i));
+                break;
+            case SQLITE_FLOAT:
+                row[i].type = DataType::Double;
+                row[i].data = sqlite3_column_double(stmt_it->second.get(), i);
+                break;
+            case SQLITE_TEXT:
+                row[i].type = DataType::String;
+                row[i].data = std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt_it->second.get(), i)));
+                break;
+            case SQLITE_BLOB:
+            {
+                row[i].type = DataType::ByteArray;
+                const void* blob = sqlite3_column_blob(stmt_it->second.get(), i);
+                int byte_size = sqlite3_column_bytes(stmt_it->second.get(), i);
+                row[i].data = std::vector<uint8_t>(reinterpret_cast<const uint8_t*>(blob), reinterpret_cast<const uint8_t*>(blob) + byte_size);
+            }
+            break;
+            case SQLITE_NULL:
+                row[i].type = DataType::Null;
+                row[i].data = nullptr;
+                break;
+            default:
+                row[i].type = DataType::Unknown;
+                row[i].data = nullptr;
+                break;
             }
         }
         result.push_back(row);
@@ -222,13 +231,13 @@ bool DaneJoe::SqliteDriver::execute_command(const std::string& sql)
     auto stmt_it = m_stmts.find(sql);
     if (stmt_it == m_stmts.end())
     {
-        DANEJOE_LOG_ERROR("default", "SqliteDriver", "database not prepared");
+        ADD_DIAG_ERROR("database", "Execute command failed: statement not prepared");
         return false;
     }
     int rc = sqlite3_step(stmt_it->second.get());
     if (rc != SQLITE_DONE)
     {
-        DANEJOE_LOG_ERROR("default", "SqliteDriver", "database execute failed: {}",std::string(sqlite3_errmsg(m_db)));
+        ADD_DIAG_ERROR("database", "Execute command failed: {}", std::string(sqlite3_errmsg(m_db)));
         return false;
     }
     return true;

@@ -11,10 +11,10 @@
 #include "danejoe/database/sql_builder.hpp"
 #include "danejoe/database/i_sql_stringify.hpp"
 
-/**
- * @namespace DaneJoe
- * @brief DaneJoe命名空间
- */
+ /**
+  * @namespace DaneJoe
+  * @brief DaneJoe命名空间
+  */
 namespace DaneJoe
 {
     /**
@@ -33,26 +33,30 @@ namespace DaneJoe
         SqlTableQuery(std::shared_ptr<ISqlStringify> stringify, const std::shared_ptr<const SqlTableItem> table_info, SqlQueryPtr query);
         /**
          * @brief 创建表
-         * @return 是否成功
+         * @return true 创建成功
+         * @return false 创建失败
          */
         bool create();
         /**
          * @brief 更新
          * @param cells 单元格
          * @param conditions 条件
-         * @return 是否成功
+         * @return true 更新成功
+         * @return false 更新失败
          */
         bool update(const std::vector<SqlCell>& cells, const std::vector<SqlConditionItem>& conditions);
         /**
          * @brief 插入
          * @param cells 单元格
-         * @return 是否成功
+         * @return true 插入成功
+         * @return false 插入失败
          */
         bool insert(const std::vector<SqlCell>& cells);
         /**
          * @brief 删除
          * @param conditions 条件
-         * @return 是否成功
+         * @return true 删除成功
+         * @return false 删除失败
          */
         bool remove(const std::vector<SqlConditionItem>& conditions);
         /**

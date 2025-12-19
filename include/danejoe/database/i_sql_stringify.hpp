@@ -14,10 +14,10 @@
 #include "danejoe/database/sql_condition.hpp"
 #include "danejoe/database/sql_sign_config.hpp"
 
-/**
- * @namespace DaneJoe
- * @brief DaneJoe命名空间
- */
+ /**
+  * @namespace DaneJoe
+  * @brief DaneJoe命名空间
+  */
 namespace DaneJoe
 {
     /**
@@ -35,13 +35,13 @@ namespace DaneJoe
          * @param type 数据类型
          * @return 字符串
          */
-        virtual std::optional<std::string> format_data_type(DataType type) const = 0;
+        virtual std::optional<std::string> try_format_data_type(DataType type) const = 0;
         /**
          * @brief 构建条件字符串
          * @param item 条件信息
          * @return 字符串
          */
-        virtual std::optional<std::string> format_condition(const SqlConditionItem& item)const = 0;
+        virtual std::optional<std::string> try_format_condition(const SqlConditionItem& item)const = 0;
         /**
          * @brief 设置符号配置
          * @param config 符号配置
@@ -53,6 +53,7 @@ namespace DaneJoe
          */
         SqlSignConfig get_sign_config();
     protected:
+        /// @brief 符号配置
         SqlSignConfig m_sign_config;
     };
 }
